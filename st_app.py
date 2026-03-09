@@ -1,7 +1,5 @@
 import cv2
 import mediapipe as mp
-from scripts.gloss.backbone import TFLiteModel, get_model
-from scripts.gloss.landmarks_extraction import load_json_file
 import streamlit as st
 import threading
 from scripts.gloss.my_functions import *
@@ -12,6 +10,7 @@ import sys
 import argparse
 
 from autocorrect import Speller
+from scripts.gloss.runtime import GLOSS_PROFILES, get_gloss_profile_names, load_gloss_runtime
 from scripts.utils import load_model
 from scripts.inference.fingerspellinginference import recognize_fingerpellings
 from scripts.inference.glossinference import getglosses
@@ -21,8 +20,6 @@ from scripts.turn import get_ice_servers
 from config.config import (
     model_letter_path,
     model_number_path,
-    index_map,
-    gloss_models_path,
     min_tracking_confidence,
     min_detection_confidence,
     MAX_HANDS,
@@ -62,30 +59,27 @@ def load_modela(model_path):
     return model
 
 
-# Load maps
-s2p_map = {k.lower(): v for k, v in load_json_file(index_map).items()}
-p2s_map = {v: k for k, v in load_json_file(index_map).items()}
-encoder = lambda x: s2p_map.get(x.lower())
-decoder = lambda x: p2s_map.get(x)
+@st.cache_resource(show_spinner=False)
+def load_cached_gloss_runtime(profile_name):
+    return load_gloss_runtime(profile_name)
 
-# Load TFLite model
 
+selected_gloss_profile = st.sidebar.selectbox(
+    "Gloss model",
+    options=get_gloss_profile_names(),
+    index=0,
+    format_func=lambda profile_name: GLOSS_PROFILES[profile_name]["display_name"],
+    help="Choose which gloss model is used when gloss mode is active.",
+)
+gloss_runtime = load_cached_gloss_runtime(selected_gloss_profile)
+decoder = lambda x: gloss_runtime["p2s_map"].get(x)
+tflite_keras_model = gloss_runtime["tflite_model"]
+st.session_state["kerasmodel"] = tflite_keras_model
+st.session_state["gloss_profile"] = selected_gloss_profile
 sequence_data = []
 
-
-if "kerasmodel" not in st.session_state.keys():
-    print("Loading Keras model")
-
-    # models_path = ['sign_language/models/islr-fp16-192-8-seed_all42-foldall-last.h5']
-    models = [get_model(max_len=None, num_classes=len(s2p_map)) for _ in gloss_models_path]
-    for model, path in zip(models, gloss_models_path):
-        model.load_weights(path)
-
-    tflite_keras_model = TFLiteModel(islr_models=models)
-
-    st.session_state["kerasmodel"] = tflite_keras_model
-
-tflite_keras_model = st.session_state["kerasmodel"]
+st.sidebar.caption(f"Loaded: {gloss_runtime['display_name']}")
+st.sidebar.caption(f"Gloss labels: {len(gloss_runtime['s2p_map'])}")
 
 
 if "letter_model" not in st.session_state.keys():

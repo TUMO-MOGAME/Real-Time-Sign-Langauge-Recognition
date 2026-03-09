@@ -5,13 +5,10 @@ import mediapipe as mp
 from autocorrect import Speller
 from scripts.utils import load_model, save_gif
 from scripts.gloss.my_functions import *
-from scripts.gloss.landmarks_extraction import load_json_file
-from scripts.gloss.backbone import TFLiteModel, get_model
+from scripts.gloss.runtime import get_gloss_profile_names, load_gloss_runtime
 from config.config import (
     model_letter_path,
     model_number_path,
-    index_map,
-    gloss_models_path,
     min_tracking_confidence,
     min_detection_confidence,
     MAX_HANDS,
@@ -32,17 +29,8 @@ spell = Speller(lang="en")
 letter_model = load_model(model_letter_path)
 number_model = load_model(model_number_path)
 
-# Load maps
-s2p_map = {k.lower(): v for k, v in load_json_file(index_map).items()}
-p2s_map = {v: k for k, v in load_json_file(index_map).items()}
-encoder = lambda x: s2p_map.get(x.lower())
-decoder = lambda x: p2s_map.get(x)
-
-# Load TFLite model
-models = [get_model(max_len=None, num_classes=len(s2p_map)) for _ in gloss_models_path]
-for model, path in zip(models, gloss_models_path):
-    model.load_weights(path)
-tflite_keras_model = TFLiteModel(islr_models=models)
+tflite_keras_model = None
+decoder = None
 sequence_data = []
 
 
@@ -65,8 +53,28 @@ def parse_opt():
     parser.add_argument("-wi", "--width", type=int, default=800, help="Webcam Width")
     parser.add_argument("-he", "--height", type=int, default=600, help="Webcam Height")
     parser.add_argument("-f", "--fps", type=int, default=30, help="Webcam FPS")
+    parser.add_argument(
+        "--gloss-profile",
+        type=str,
+        choices=get_gloss_profile_names(),
+        default="original",
+        help="Gloss model profile to use for gloss recognition.",
+    )
     opt = parser.parse_args()
     return opt
+
+
+def initialize_gloss_runtime(profile_name):
+    global tflite_keras_model, decoder, sequence_data
+
+    gloss_runtime = load_gloss_runtime(profile_name)
+    decoder = lambda x: gloss_runtime["p2s_map"].get(x)
+    tflite_keras_model = gloss_runtime["tflite_model"]
+    sequence_data = []
+
+    print(f"Loaded gloss profile: {gloss_runtime['display_name']}")
+    print(f"Gloss label map: {gloss_runtime['index_map_path']}")
+    print(f"Gloss model weights: {', '.join(gloss_runtime['model_paths'])}")
 
 
 def handle_key_press(key):
@@ -237,6 +245,7 @@ def main():
     Main function to run the ASL recognition system.
     """
     opt = parse_opt()
+    initialize_gloss_runtime(opt.gloss_profile)
     video_path, fps, _, _ = process_input(opt)
 
     global output, _output

@@ -154,8 +154,10 @@ model_letter_path = f"{MODEL_PATH}/letter_model.p"
 model_number_path = f"{MODEL_PATH}/number_model.p"
 
 gloss_models_path = ["models/gloss/gloss_model.h5"]
+custom_gloss_models_path = ["models/gloss/custom_gloss_model.weights.h5"]
 
 index_map = "data/sign_to_prediction_index_map.json"
+custom_index_map = "data/custom_sign_to_prediction_index_map.json"
 help_text = 'Tip: Press "k" to enable fingerspelling | "l" for number mode | "v" to clear output | "d" to draw landmarks'
 
 if __name__ == "__main__":
