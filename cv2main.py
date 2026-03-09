@@ -140,58 +140,58 @@ def process_frame(
     _output,
     res,
 ):
-    """
-    Process each frame of the video or webcam feed.
+    """Process each frame of the video or webcam feed.
 
     Args:
-    - image (numpy array): Input image.
-    - fingerspelling_mode (bool): Whether the fingerspelling mode is active.
-    - number_mode (bool): Whether the number recognition mode is active.
-    - output (list): List of recognized words or gestures.
-    - current_hand (int): Number of hands detected in the previous frame.
-    - TIMING (int): Timing threshold for recognizing gestures.
-    - autocorrect (bool): Whether to autocorrect misspelled words.
-    - holistic: MediaPipe Holistic model.
-    - hands: MediaPipe Hands model.
-    - _output (list): List of character sequences predicted from hand gestures.
-    - res (list): List of recognized glosses.
+        image (numpy array): Input image.
+        fingerspelling_mode (bool): Whether the fingerspelling mode is active.
+        number_mode (bool): Whether the number recognition mode is active.
+        output (list): List of recognized words or gestures.
+        current_hand (int): Number of hands detected in the previous frame.
+        TIMING (int): Timing threshold for recognizing gestures.
+        autocorrect (bool): Whether to autocorrect misspelled words.
+        holistic: MediaPipe Holistic model.
+        hands: MediaPipe Hands model.
+        _output (list): List of character sequences predicted from hand gestures.
+        res (list): List of recognized glosses.
 
     Returns:
-    - image (numpy array): Processed image.
-    - output (list): Updated list of recognized words or gestures.
-    - current_hand (int): Updated number of hands detected in the current frame.
+        image (numpy array): Processed image.
+        output (list): Updated list of recognized words or gestures.
+        current_hand (int): Updated number of hands detected in the current frame.
     """
+
     global letter_model, number_model, tflite_keras_model, sequence_data, draw_landmarks_flag
 
-	use_fingerspelling = (
-		fingerspelling_mode
-		and letter_model is not None
-		and number_model is not None
-	)
+    use_fingerspelling = (
+        fingerspelling_mode
+        and letter_model is not None
+        and number_model is not None
+    )
 
-	if use_fingerspelling:
-		try:
-			from scripts.inference.fingerspellinginference import (
-				recognize_fingerpellings,
-			)
+    if use_fingerspelling:
+        try:
+            from scripts.inference.fingerspellinginference import (
+                recognize_fingerpellings,
+            )
 
-			image, current_hand, output, _output = recognize_fingerpellings(
-				image,
-				number_mode,
-				letter_model,
-				number_model,
-				hands,
-				current_hand,
-				output,
-				_output,
-				TIMING,
-				autocorrect,
-				draw_landmarks_flag,
-			)
-		except Exception as error:
-			exc_type, exc_obj, exc_tb = sys.exc_info()
-			print(f"{error}, line {exc_tb.tb_lineno}")
-	else:
+            image, current_hand, output, _output = recognize_fingerpellings(
+                image,
+                number_mode,
+                letter_model,
+                number_model,
+                hands,
+                current_hand,
+                output,
+                _output,
+                TIMING,
+                autocorrect,
+                draw_landmarks_flag,
+            )
+        except Exception as error:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            print(f"{error}, line {exc_tb.tb_lineno}")
+    else:
         try:
             from scripts.inference.glossinference import getglosses
 
