@@ -78,15 +78,15 @@ def initialize_gloss_runtime(profile_name):
 
 
 def handle_key_press(key):
-    """
-    Handle key presses.
+    """Handle key presses.
 
     Args:
-    - key (int): Key code of the pressed key.
+        key (int): Key code of the pressed key.
 
     Returns:
-    - bool: True if program should continue, False if program should stop.
+        bool: True if program should continue, False if program should stop.
     """
+
     global output, saveGIF, number_mode, fingerspelling_mode, draw_landmarks_flag
 
     # Press 'Esc' to quit
@@ -99,6 +99,13 @@ def handle_key_press(key):
 
     elif key == ord("k"):
         fingerspelling_mode = not fingerspelling_mode
+        # If the letter/number models failed to load (None), keep gloss-only mode.
+        if fingerspelling_mode and (letter_model is None or number_model is None):
+            print(
+                "[INFO] Fingerspelling models are not available in this environment; "
+                "fingerspelling mode will remain disabled.",
+            )
+            fingerspelling_mode = False
 
     elif key == ord("d"):
         draw_landmarks_flag = not draw_landmarks_flag
@@ -156,29 +163,35 @@ def process_frame(
     """
     global letter_model, number_model, tflite_keras_model, sequence_data, draw_landmarks_flag
 
-    if fingerspelling_mode:
-        try:
-            from scripts.inference.fingerspellinginference import (
-                recognize_fingerpellings,
-            )
+	use_fingerspelling = (
+		fingerspelling_mode
+		and letter_model is not None
+		and number_model is not None
+	)
 
-            image, current_hand, output, _output = recognize_fingerpellings(
-                image,
-                number_mode,
-                letter_model,
-                number_model,
-                hands,
-                current_hand,
-                output,
-                _output,
-                TIMING,
-                autocorrect,
-                draw_landmarks_flag,
-            )
-        except Exception as error:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            print(f"{error}, line {exc_tb.tb_lineno}")
-    else:
+	if use_fingerspelling:
+		try:
+			from scripts.inference.fingerspellinginference import (
+				recognize_fingerpellings,
+			)
+
+			image, current_hand, output, _output = recognize_fingerpellings(
+				image,
+				number_mode,
+				letter_model,
+				number_model,
+				hands,
+				current_hand,
+				output,
+				_output,
+				TIMING,
+				autocorrect,
+				draw_landmarks_flag,
+			)
+		except Exception as error:
+			exc_type, exc_obj, exc_tb = sys.exc_info()
+			print(f"{error}, line {exc_tb.tb_lineno}")
+	else:
         try:
             from scripts.inference.glossinference import getglosses
 

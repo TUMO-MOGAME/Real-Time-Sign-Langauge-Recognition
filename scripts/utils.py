@@ -217,7 +217,24 @@ def save_video(frame_array, width, height, fps=30, output_dir="./assets/result.m
 
 # model_dict = pickle.load(open(model_path, 'rb'))
 def load_model(model_path):
-    with open(model_path, "rb") as model_file:
-        model_dict = pickle.load(model_file)
-        model = model_dict["model"]
-    return model
+	"""Load a pickled scikit-learn model.
+
+	This is used for the fingerspelling letter/number classifiers, which were
+	originally trained with an older scikit-learn version. Newer versions can
+	throw errors when unpickling (e.g. incompatible dtype for Tree nodes).
+
+	Instead of crashing the whole app, we catch any exception here and return
+	None so that callers can gracefully disable fingerspelling while still
+	allowing gloss recognition to run.
+	"""
+	try:
+		with open(model_path, "rb") as model_file:
+			model_dict = pickle.load(model_file)
+			model = model_dict["model"]
+		return model
+	except Exception as exc:  # noqa: BLE001 - we want to be defensive here
+		print(
+			f"[WARN] Failed to load model from '{model_path}': {exc}. "
+			"Fingerspelling (letters/numbers) will be disabled.",
+		)
+		return None
