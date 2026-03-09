@@ -77,7 +77,7 @@ if "kerasmodel" not in st.session_state.keys():
     print("Loading Keras model")
 
     # models_path = ['sign_language/models/islr-fp16-192-8-seed_all42-foldall-last.h5']
-    models = [get_model() for _ in gloss_models_path]
+    models = [get_model(max_len=None, num_classes=len(s2p_map)) for _ in gloss_models_path]
     for model, path in zip(models, gloss_models_path):
         model.load_weights(path)
 

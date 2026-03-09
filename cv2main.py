@@ -39,7 +39,7 @@ encoder = lambda x: s2p_map.get(x.lower())
 decoder = lambda x: p2s_map.get(x)
 
 # Load TFLite model
-models = [get_model() for _ in gloss_models_path]
+models = [get_model(max_len=None, num_classes=len(s2p_map)) for _ in gloss_models_path]
 for model, path in zip(models, gloss_models_path):
     model.load_weights(path)
 tflite_keras_model = TFLiteModel(islr_models=models)

@@ -1,0 +1,8 @@
+{
+  "num_signs": 25,
+  "num_sequences": 75,
+  "train_sequences": 25,
+  "val_sequences": 25,
+  "test_sequences": 25,
+  "skipped_sequences": []
+}

@@ -352,7 +352,7 @@ class TFLiteModel(tf.Module):
         return {"outputs": outputs}
 
 
-def get_model(max_len=MAX_LEN, dropout_step=0, dim=192):
+def get_model(max_len=MAX_LEN, dropout_step=0, dim=192, num_classes=NUM_CLASSES):
     """
     Creates a model for sequence classification using a combination of convolutional layers and transformer blocks.
 
@@ -360,6 +360,7 @@ def get_model(max_len=MAX_LEN, dropout_step=0, dim=192):
         max_len (int): Maximum length of the input sequence.
         dropout_step (int): Dropout step for the LateDropout layer.
         dim (int): Dimension of the hidden representations.
+        num_classes (int): Number of output classes for the classifier head.
 
     Returns:
         A TensorFlow Keras Model object.
@@ -400,5 +401,5 @@ def get_model(max_len=MAX_LEN, dropout_step=0, dim=192):
     x = tf.keras.layers.Dense(dim * 2, activation=None, name="top_conv")(x)
     x = tf.keras.layers.GlobalAveragePooling1D()(x)
     x = LateDropout(0.8, start_step=dropout_step)(x)
-    x = tf.keras.layers.Dense(NUM_CLASSES, name="classifier", activation="softmax")(x)
+    x = tf.keras.layers.Dense(num_classes, name="classifier", activation="softmax")(x)
     return tf.keras.Model(inp, x)

@@ -1,5 +1,12 @@
 import numpy as np
-import cv2
+
+try:
+    import cv2
+except ModuleNotFoundError:
+    class _CV2Fallback:
+        FONT_HERSHEY_SIMPLEX = 0
+
+    cv2 = _CV2Fallback()
 
 
 THRESH_HOLD = 0.5
